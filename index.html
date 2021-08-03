@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+  body { margin: 0; }
+  .flex {display: flex;}
+  .hidden{display:none;}
+  .center{ flex-direction:column; align-items: center;justify-content: center;}
+  .full-screen{width:100%; height:100vh;}
+  </style>
+
+  <script src="force-graph.min.js"></script>
+  
+</head>
+
+<body>
+
+<div id="splash" class="flex center full-screen" style="position:absolute; z-index:200;color:lightgray;background:white;">
+  <h1>Loading...</h1>
+</div>
+
+<div id="root" class="flex center">
+
+<!--ROW-->
+ <div style="display: flex;flex-direction:row;">
+
+ <div id="g1place" style="width:50vw; height:50vh;">
+  <div style="position:absolute; z-index:101; margin:1rem;"><span>animation:</span><a id="g1animationctrl" href="#">on</a></div>
+  <div id="graph1"></div>
+ </div>
+
+ <div id="ctrl" style="width:50vw; height:50vh;">
+  <div style="margin:1rem; width:100%; height:5%;">
+   <span>nodes:</span>
+   <a id="runctrl" href="#">run</a>
+   <a id="stopctrl" href="#">stop</a>
+   <a id="addctrl" href="#">add</a>
+   <a id="rmctrl" href="#">rm</a>
+   <span>links:</span>
+   <a id="addlink" href="#">add</a>
+   <a id="rmlink" href="#">rm</a>
+  </div>
+  <div  style="margin:1rem; max-height:50%; overflow:auto">
+    <table id="tbl1" style="background: aliceblue;">
+    </table>
+  </div>
+  
+  <div style="margin:1rem; width:100%; height:5%;">
+   <span>attacks:</span>
+   <span>split </span><a id="split_atk" href="#">run,</a>
+   <span>power(>1/2) </span><a id="power_atk" href="#">run</a>
+  </div>
+  
+ </div>
+ 
+</div>
+<!--ROW-->
+
+
+
+
+
+</div> <!--COL-->
+
+
+<script type="module">
+
+const rootEl=document.getElementById("root");
+const splashEl=document.getElementById("splash");
+
+
+var N=5; var UN = 10;
+
+// https://htmlcolorcodes.com/color-names/
+const colors=['red','blue','pink','orange','yellow','green','gold','khaki','magenta',
+'violet','purple','lime','lightgreen','olive','aqua','brown','lightgray']
+
+
+function toHex(buffer) {
+  return Array.prototype.map.call(buffer, x => x.toString(16).padStart(2, '0')).join('');
+}
+var rndstr=(n)=>{
+  var arr = new Uint8Array(n);
+  window.crypto.getRandomValues(arr);
+  return toHex(arr)
+}
+    var g1animation=1;
+   
+    const g1animationctrlEl=document.getElementById('g1animationctrl')
+    g1animationctrlEl.onclick=function(e){
+      //console.log('g1animationctrlEl',e)
+      g1animation=(g1animation+1)%2;
+      if(g1animation==0) g1animationctrlEl.innerText='off';
+      else g1animationctrlEl.innerText='on';
+      console.log('g1animationl',g1animation);
+    }
+
+
+    const runctrlEl=document.getElementById('runctrl')
+    runctrlEl.onclick=function(e){
+      console.log('runctrl',e)
+      runAll();
+    }
+
+    const stopctrlEl=document.getElementById('stopctrl')
+    stopctrlEl.onclick=function(e){
+      console.log('stopctrl',e)
+      stopAll();
+    }
+
+    const addctrlEl=document.getElementById('addctrl')
+    addctrlEl.onclick=function(e){
+      console.log('addctrl',e);
+      newNode();
+      resizeWindow();
+    }
+    const rmctrlEl=document.getElementById('rmctrl')
+    rmctrlEl.onclick=function(e){
+      console.log('rmctrl',e)
+      rmRndNode();
+    }
+
+
+    const split_atk_El=document.getElementById('split_atk')
+    split_atk_El.onclick=function(e){
+      //console.log('split_atk',e)
+      splitAtk();
+      console.log('attack.split',attack.split)
+      split_atk_El.innerText = attack.split ? 'stop' : 'run';
+    }
+
+
+    const power_atk_El=document.getElementById('power_atk')
+    power_atk_El.onclick=function(e){
+      //console.log('power_atk',e)
+      powerAtk();
+      console.log('attack.power',attack.power)
+      power_atk_El.innerText = attack.power ? 'stop' : 'run';
+    }
+
+    const addlinkEl=document.getElementById('addlink')
+    addlinkEl.onclick=function(e){
+      //console.log('addlink',e);
+      addRndLink();
+    }
+    const rmlinkEl=document.getElementById('rmlink')
+    rmlinkEl.onclick=function(e){
+      //console.log('rmlink',e);
+      rmRndLink();
+    }
+
+
+  const elem1 = document.getElementById('graph1');
+
+  const g1place = document.getElementById('g1place');
+
+    var data1 = {nodes:[],links:[]}
+    const Graph1 = ForceGraph()(elem1)
+      .graphData(data1)
+      .backgroundColor('lightgreen')
+      .nodeLabel('id')
+      .linkDirectionalParticleWidth(3.4)
+      .linkDirectionalParticleColor( (l) => { return l.source.color; });
+
+      Graph1.onNodeClick(node => {
+        console.log('onNodeClick',node)
+      })
+      
+      Graph1.onLinkClick(function(link){
+        console.log('onLinkClick',link)
+      })
+      
+window.Graph1=Graph1
+      
+
+
+const addNodeToG1 = (fcnode)=>{
+      const { nodes, links } = Graph1.graphData();
+      const no=fcnode.no
+      const addr=fcnode.addr
+      let node={id:"n"+no,group:1,color:colors[no%colors.length],no:no,addr:addr,fcnode:fcnode,t:1}
+      //g1links[addr]={}
+      const nls={}
+      for(let i=0;i<nodes.length;i++){
+        let ni=nodes[i];
+        if(ni.t!=1)continue;
+        let link={source:node,target:ni}
+        links.push(link)
+        //g1links[addr].push(link)
+        nls[ni.addr]=link
+        let addr2=ni.addr
+        let link2={source:nodes[i],target:node}
+        links.push(link2)
+        //g1links[addr2].push(link2)
+        g1links[addr2][addr]=link2
+      }
+      g1links[addr]=nls
+      nodes.push(node)
+      Graph1.graphData({nodes: nodes,links: links})
+}
+
+const rmNodeFromG1 = (fcnode)=>{
+      const { nodes, links } = Graph1.graphData();
+      const addr=fcnode.addr
+      const nnodes=[]
+      const nl=nodes.length
+      for(let i=0;i<nl;i++){
+        const node=nodes[i]
+        if(node.addr==addr) continue;
+        nnodes.push(node)
+      }
+      const nlinks=[]
+      const ll=links.length
+      for(let i=0;i<ll;i++){
+        const link=links[i]
+        if(link.source.addr==addr || link.target.addr==addr) continue;
+        nlinks.push(link)
+      }
+      Graph1.graphData({nodes: nnodes,links: nlinks})
+}
+
+const reAddNodesToG1 = ()=>{
+      const nodes = []; const links = [];
+      for(let a of Object.keys(nm)){
+      const fcnode=nm[a];  const no=fcnode.no;   const addr=fcnode.addr
+      let node={id:"n"+no,group:1,color:colors[no%colors.length],no:no,addr:addr,fcnode:fcnode,t:1}
+      const nls={}
+      for(let i=0;i<nodes.length;i++){
+        let ni=nodes[i];
+        if(ni.t!=1)continue;
+        if(attack.split){
+         const fcnode2=ni.fcnode;
+         if(fcnode.flags.gr!=fcnode2.flags.gr) continue;
+        }
+        let link={source:node,target:nodes[i]}
+        links.push(link)
+        nls[ni.addr]=link
+        let addr2=nodes[i].addr
+        let link2={source:nodes[i],target:node}
+        links.push(link2)
+        g1links[addr2][addr]=link2
+      }
+      g1links[addr]=nls
+      nodes.push(node)
+      }
+      Graph1.graphData({nodes: nodes,links: links})
+}
+
+
+
+const getRndFCNodeAddr=()=>{
+  let keys=Object.keys(nm);
+  if (keys.length==0){
+    console.log('nodes not exist')
+    return null
+  }
+  return keys[Math.floor(Math.random()*(keys.length))]
+}
+
+
+const addRndLink = ()=>{
+
+  const { nodes, links } = Graph1.graphData();
+  
+
+  for(let i=0;i<nodes.length;i++){
+    let ni=nodes[i];
+    let nls=g1links[ni.addr];
+    let keys = Object.keys(nls);
+    //console.log(ni.no,ni.addr.substr(0,8),keys.length);
+    if(keys.length<(nodes.length-1)){
+      for(let j=0;j<nodes.length;j++)if(i!=j){
+        let nj=nodes[j];
+        if(!nls[nj.addr]){
+        console.log(ni.no+'!->'+nj.no)
+        let link={source:ni,target:nj}
+        links.push(link)
+        g1links[ni.addr][nj.addr]=link
+        let link2={source:nj,target:ni}
+        links.push(link2)
+        g1links[nj.addr][ni.addr]=link2
+        Graph1.graphData({nodes: nodes,links: links})
+        return;
+        }
+      }
+    }
+
+  }
+  
+
+}
+
+const rmRndLink = ()=>{
+
+  const { nodes, links } = Graph1.graphData();
+  const ll=links.length
+  let i=Math.floor(Math.random()*(ll))
+  if(i%2==1)i--;
+  
+  let link = links[i]; let link2 = links[i+1];
+  links[i]=links[ll-2];links[i+1]=links[ll-1];
+  links.pop();links.pop();
+  
+  let source = link.source.fcnode; let target = link.target.fcnode;
+  let nls=g1links[source.addr];
+  delete nls[target.addr];
+  
+  source = link2.source.fcnode; target = link2.target.fcnode;
+  nls=g1links[source.addr];
+  delete nls[target.addr];
+  
+  
+  Graph1.graphData({nodes: nodes,links: links})
+}
+
+window.checkLinks=()=>{
+  console.log('checkLinks')
+  const { nodes, links } = Graph1.graphData();
+  const ll=links.length
+  for(let i=0;i<ll;i+=2){
+    let link = links[i]; let link2 = links[i+1];
+    let source = link.source.fcnode; let target = link.target.fcnode;
+    //console.log('link:',source.no,'->',target.no)
+    let nls=g1links[source.addr];
+    let s=source.no+':';
+    for(let nl of Object.keys(nls)){
+      if(s.length>0)s+=','
+      s+=nls[nl].target.fcnode.no //addr.substr(0,8); // g1 link
+    }
+    //console.log(s);
+    let source2 = link2.source.fcnode; let target2 = link2.target.fcnode;
+    console.log('link:',source.no,'->',target.no, 'link2:',source2.no,'->',target2.no)
+    s+=":"+source2.no+':';
+    nls=g1links[source2.addr];
+    for(let nl of Object.keys(nls)){
+      if(s.length>0)s+=','
+      s+=nls[nl].target.fcnode.no //addr.substr(0,8); // g1 link
+    }
+    //console.log(g1links[source.addr]);
+    console.log(s);
+  }
+}
+
+
+
+
+
+var G2s={}
+//var G3s={}
+
+
+
+const addNodeToG2=(fcnode)=>{
+  const addr = fcnode.addr;
+  const no = fcnode.no;
+  if(!addr){console.log('addNodeToG2 !addr',fcnode)}
+  
+  const rowEl = document.createElement('div');
+  rowEl.style="display: flex;flex-direction:row; margin-top:1px;"
+  
+  const g2placeEl = document.createElement('div');
+  g2placeEl.style="width:50vw; height:50vh;"
+  const g2infoEl = document.createElement('div');
+  const color=colors[fcnode.no%colors.length];
+  g2infoEl.style="position:absolute; z-index:100; margin:1rem; color:"+color+";";
+  g2infoEl.innerText=no+' '+addr.substr(0,8);
+  g2placeEl.appendChild(g2infoEl)
+  const g2El = document.createElement('div');
+  g2placeEl.appendChild(g2El)
+  
+
+  const g3placeEl = document.createElement('div');
+  g3placeEl.style="width:50vw; height:50vh;";
+  //const g3infoEl = document.createElement('div');
+  //g3infoEl.style="margin-left:1rem;width:calc(100% - 1rem); height:100%; background: aliceblue;overflow:auto";
+  //g3placeEl.appendChild(g3infoEl)
+  //fcnode.g3infoEl = g3infoEl
+  const g3El = document.createElement('div');
+  g3El.style="margin-left:1px;width:calc(100% - 1px); height:100%; background: aliceblue;overflow:auto";
+  g3placeEl.appendChild(g3El)
+  
+  rowEl.appendChild(g2placeEl)
+  rowEl.appendChild(g3placeEl)
+  
+  rootEl.appendChild(rowEl)
+  
+  fcnode.g2row = rowEl
+  
+
+    var data2 = {nodes:[],links:[]}
+    let Graph2 = ForceGraph()(g2El)
+      .graphData(data2)
+      .backgroundColor('lightblue')
+      .nodeLabel('id')
+      .linkDirectionalArrowLength(5)
+      .onNodeClick(node => {  console.log('g2 onNodeClick',node)});
+      
+  G2s[addr]=Graph2;
+
+  /*
+  
+    var data3 = {nodes:[],links:[]}
+    let Graph3 = ForceGraph()(g3El)
+      .graphData(data3)
+      .backgroundColor('lightblue')
+      .nodeLabel('id')
+      .linkDirectionalArrowLength(5)
+      .onNodeClick(node => {  console.log('g3 onNodeClick',node)});
+      
+  G3s[addr]=Graph3;
+  */
+}
+
+
+function rmNodeFromG2(node){ if(!node.g2row) return;  rootEl.removeChild(node.g2row); }
+
+
+const g2zoomF=()=>{
+  if(!stoped){
+   for(let a of Object.keys(G2s)){
+    let g2=G2s[a];
+    g2.zoomToFit();
+   }
+  }
+  setTimeout(g2zoomF,2000+Math.floor(Math.random() *  3000))
+}
+setTimeout(g2zoomF,2000)
+
+
+function resizeWindow(){
+  
+  
+  const h=g1place.offsetHeight
+  const w=g1place.offsetWidth
+
+  console.log('resize',h,w)
+
+  Graph1.height(h)
+  Graph1.width(w)
+  
+  for(let a of Object.keys(G2s)){
+    let g2=G2s[a]
+    g2.height(h-1)
+    g2.width(w)
+    
+  }
+  
+}
+
+
+window.onresize=()=>resizeWindow();
+window.onload=()=>{
+  setTimeout(function(){
+  resizeWindow();
+  splashEl.classList.remove('flex');
+  splashEl.classList.add('hidden');
+  },100);
+}
+
+
+
+
+//---------------------------------------------------------------------------
+
+import {ForceCons} from './forcecons-sim.js'
+
+
+let cfg={stoped:true}
+
+const hash256 = async (s)=>{
+ const hb = await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(s));
+ const ha = Array.from(new Uint8Array(hb));
+ return ha.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+
+var addrs=[]; for(let i=0;i<32;i++)addrs.push(rndstr(16));
+
+
+
+var nm={}
+var g1links={}
+
+
+var bk0={
+  data:{
+    no:0,
+    ph:'000000000000000000000000000000000000000000000000000000000000000000',
+    timestamp:(new Date()).toISOString()
+  },
+  sigs:{}
+}
+bk0.h=await hash256(JSON.stringify(bk0.data))
+bk0.sender={no:0,addr:'000000000000000000000000000000000000000000000000000000000000000000'}
+
+console.log('bk0',bk0)
+
+let sndcnt=0
+
+const send=(no,msg,addr)=>{
+ sndcnt++
+
+ let sender;
+ let nls;
+ if(addr){
+  sender=nm[addr];
+  nls=g1links[addr];
+ }
+ for(let a of Object.keys(nm)){
+   let fcnode=nm[a]
+   if(fcnode.stoped()) continue;
+   if(sender && nls){
+     let link=nls[fcnode.addr]
+     if(!link) continue;
+     if(g1animation){
+       Graph1.emitParticle(link);
+     }
+   }
+   setTimeout(()=>{fcnode.onmsg(msg)},Math.floor(Math.random() * 250))
+ }
+
+}
+
+const rpc=(q,a)=>{
+return new Promise((resolve, reject) => {
+  setTimeout(() => {
+    let n=nm[a]
+    if(!n)reject("rpc error: wrong address",q,a);
+    let r=n.rpc(q)
+    if(!r)reject("rpc failed: ",q,a);
+    resolve(r);
+  }, 1);
+});
+}
+
+
+
+const onlog=(log,fcnode)=>{
+  const g3infoEl = fcnode.g3infoEl
+  if(g3infoEl){
+   const div = document.createElement('div');
+   div.innerText=log
+   g3infoEl.appendChild(div)
+   g3infoEl.scrollTop = g3infoEl.scrollHeight;
+  }
+}
+
+const onlbk=(lbk,fcnode)=>{
+  //console.log('onlbk',lbk,fcnode)
+  if(fcnode.els){
+    fcnode.els.lbk_no.innerText=lbk.data.no;
+    fcnode.els.lbk_h.innerText=lbk.h.substr(0,8);
+    let fbk=fcnode.fbk()
+    fcnode.els.fbk_no.innerText=fbk.data.no;
+    fcnode.els.fbk_h.innerText=fbk.h.substr(0,8);
+  }
+}
+
+
+const G2_nodes={}
+const G2_onds={}
+
+const onbk=(bk,fcnode)=>{
+  
+  const addr = fcnode.addr;
+  
+  if(!addr){console.log('onbk !addr',fcnode);return;}
+  
+  let g2=G2s[addr];
+  
+  if(!g2){console.log('onbk !g2',fcnode);return;}
+  
+  //if(fcnode.no!=0)return;
+
+  if(g2){
+    const { nodes, links } = g2.graphData();
+    //console.log('onbk',fcnode.no,nodes, links)
+    let name='bk#'+bk.data.no+'['+bk.h.substr(0,8)+'->'+bk.data.ph.substr(0,8)+'].'+bk.sender.no;
+    let node={ "id" : name, color:colors[bk.sender.no%colors.length]}
+    nodes.push(node)
+    
+    let g2nodes=G2_nodes[addr];
+    if(!g2nodes){ g2nodes={}; G2_nodes[addr]=g2nodes;}
+    
+    let g2onds=G2_onds[addr];
+    if(!g2onds){ g2onds={};G2_onds[addr]=g2onds; }
+
+    g2nodes[bk.h]=node
+    if(bk.data.no>0){
+      
+      let oh=g2onds[bk.h]
+      if(oh){
+        let on=g2nodes[oh]
+        if(on){
+         let link={ source: on, target: node }
+         console.log("orphan link",link)
+         links.push(link);
+        }
+      }
+      
+      let pnode=g2nodes[bk.data.ph]
+      if(pnode){
+        let link={ source: node, target: pnode }
+        links.push(link);
+      } else {
+        g2onds[bk.data.ph]=bk.h
+      }
+    }
+
+    g2.graphData({nodes: nodes,links: links})
+  }
+
+}
+
+
+var stoped = true;
+
+
+window.stopAll=()=>{
+  for(let h of Object.keys(nm)){
+    let node=nm[h]
+    node.stop();
+    if(node.els)node.els.run.innerText='run'
+  }
+  stoped=true;
+}
+window.runAll=()=>{
+  for(let h of Object.keys(nm)){
+    let node=nm[h]
+    node.run();
+    if(node.els)node.els.run.innerText='stop'
+  }
+  stoped=false;
+}
+window.checkAll=()=>{
+  for(let h of Object.keys(nm)){
+    let node=nm[h]
+    node.check();
+  }
+}
+
+
+var attack={}
+
+window.splitAtk=()=>{
+ console.log('splitAtk');
+ //if(stoped){console.log('stoped, do nothing');return;}
+ attack.split=!(attack.split);
+ if(attack.split){
+  let keys = Object.keys(nm);
+  let l=keys.length;
+  let l2=l/2;
+  for(let i=0;i<l;i++){
+   const a=keys[i];
+   let fcnode=nm[a]
+   if(i<l2)fcnode.flags.gr=1;
+   else fcnode.flags.gr=0;
+  }
+ }
+ 
+ reAddNodesToG1();
+  
+}
+
+var pow_atk_node_addr;
+window.powerAtk=()=>{
+ console.log('powerAtk');
+ //if(stoped){console.log('stoped, do nothing');return;}
+ attack.power=!(attack.power);
+ if(attack.power){
+  let keys = Object.keys(nm);
+  let l=keys.length;
+  if(l>1){
+    let fcnode=nm[keys[0]]; // cfg timeinterval
+    pow_atk_node_addr=fcnode.addr;
+    console.log('powerAtk run',fcnode);
+    fcnode.set_bk_prod_p0(0.99);
+    fcnode.set_bk_prod_i0(0);
+    fcnode.set_bk_prod_i1(1000);
+    fcnode.set_atk({power:1})
+  }
+ } else {
+   if(pow_atk_node_addr){
+     let fcnode= nm[pow_atk_node_addr];
+     console.log('powerAtk stop',fcnode);
+     fcnode.set_bk_prod_p0_def();
+     fcnode.set_bk_prod_i0_def();
+     fcnode.set_bk_prod_i1_def();
+    fcnode.set_atk({})
+   }
+ }
+}
+
+
+
+
+var nodecnt=0;
+
+const newNode=()=>{
+  let no=nodecnt++
+  //let name='node'+no;
+  let addr=rndstr(32);
+  let opt={no:no,/*name:name,*/addr:addr,send:send,rpc:rpc,hash256:hash256,rndstr:rndstr,onbk:onbk,onlbk:onlbk}
+  let fcnode=new ForceCons(opt,cfg,bk0)
+  nm[addr]=fcnode
+  addNodeToG1(fcnode)
+  addNodeToG2(fcnode)
+  fcnode.set_gbk(bk0)
+  addNodeToTbl1(fcnode)
+  fcnode.flags={}
+  return fcnode
+}
+
+const rmNode=(addr)=>{
+  let fcnode=nm[addr]
+  if(!fcnode){console.log('rmNode: no such addr',addr);return;}
+  
+  let keys=Object.keys(nm);
+  if (keys.length<2){
+    console.log('can not rm, one node must exist')
+    return
+  }
+  
+  
+  fcnode.stop();
+  delete nm[addr]
+  rmNodeFromTbl1(fcnode);
+  rmNodeFromG1(fcnode);
+  rmNodeFromG2(fcnode);
+}
+
+const rmRndNode=()=>{
+  let keys=Object.keys(nm);
+  if (keys.length<2){
+    console.log('can not rm, one node must exist')
+    return
+  }
+  let ri=1+Math.floor(Math.random()*(keys.length-1))
+  let addr=keys[ri]
+  rmNode(addr)
+}
+
+
+for(var i=0;i<N;i++){
+  newNode()
+}
+
+
+// -------------------------------------------------------
+/*
+var unodecnt=0
+const newUNode=()=>{
+  let no=nodecnt++
+  let name='u'+no;
+  let addr=rndstr(32);
+  let unode={no:no,name:name,addr:addr};
+  if(!tryAddUNodeToG1(unode)){return null;}
+  unm[addr]=unode;
+  return unode
+}
+*/
+
+//for(var i=0;i<UN;i++){
+//  newUNode()
+//}
+
+
+var tbl1El;
+
+function rmNodeFromTbl1(node){
+  var row =node.tbl1row
+  if(!row) return;
+  var tplace = document.getElementById("tbl1");
+  tplace.removeChild(row)
+}
+
+function addNodeToTbl1(node){
+  if(!node.els)node.els={};
+  
+  var tplace = document.getElementById("tbl1");
+  var row = document.createElement("tr");
+
+  //const createCell = (text)=>{
+  //  var cell = document.createElement("td");
+  //  var cellText = document.createTextNode(text);
+  //  cell.appendChild(cellText);
+  //}
+  //
+
+    var cell = document.createElement("td");
+    var divEl = document.createElement('div');
+    divEl.innerText=node.no;
+    cell.appendChild(divEl);
+    row.appendChild(cell);
+
+
+    cell = document.createElement("td");
+    var nodeLink = document.createElement('a');
+    nodeLink.href='#';
+    //nodeLink.style='margin-right:3px;'
+    nodeLink.innerText=node.addr.substr(0,8)
+    nodeLink.addr=node.addr
+    nodeLink.onclick=function(e){
+      let addr=e.target.addr;
+      if(!addr)return;
+      console.log('node',addr)
+      let fcnode=nm[addr];
+      if(!fcnode)return;
+      console.log('fcnode.g2row',fcnode.g2row);
+      //fcnode.g2row.scrollIntoView();
+      window.g2row=fcnode.g2row;
+      g2row.scrollIntoView();
+      return false;
+    }
+    cell.appendChild(nodeLink);
+    row.appendChild(cell);
+    
+    cell = document.createElement("td");
+    nodeLink = document.createElement('a');
+    node.els.run_link=nodeLink;
+    nodeLink.href='#';
+    //nodeLink.style='margin-right:3px;'
+    if(node.stoped()){
+      nodeLink.innerText='run'
+    } else {
+      nodeLink.innerText='stop'
+    }
+    node.els.run=nodeLink;
+    nodeLink.addr=node.addr
+    nodeLink.onclick=function(e){
+      let el=e.target;
+      let addr=el.addr
+      if(!addr){console.log('error, no node addr');return;}
+      let node=nm[addr];
+      if(!node){console.log('error, no such node',addr);return;}
+      if(!node.stoped()){ node.stop();el.innerText='run';
+      } else {node.run(); el.innerText='stop';}
+    }
+    cell.appendChild(nodeLink);
+    row.appendChild(cell);
+    
+    cell = document.createElement("td");
+    var divEl = document.createElement('div');
+    divEl.innerText=node.lbk().data.no;
+    node.els.lbk_no=divEl;
+    //divEl.style='margin-right:3px;'
+    cell.appendChild(divEl);
+    row.appendChild(cell);
+    
+    cell = document.createElement("td");
+    divEl = document.createElement('div');
+    divEl.innerText=node.lbk().h.substr(0,8)
+    node.els.lbk_h=divEl;
+    cell.appendChild(divEl);
+    row.appendChild(cell);
+
+
+
+    cell = document.createElement("td");
+    divEl = document.createElement('div');
+    divEl.innerText=node.fbk().data.no;
+    node.els.fbk_no=divEl;
+    //divEl.style='margin-right:3px;'
+    cell.appendChild(divEl);
+    row.appendChild(cell);
+    
+    cell = document.createElement("td");
+    divEl = document.createElement('div');
+    divEl.innerText=node.fbk().h.substr(0,8)
+    node.els.fbk_h=divEl;
+    cell.appendChild(divEl);
+    row.appendChild(cell);
+
+    cell = document.createElement("td");
+    nodeLink = document.createElement('a');
+    nodeLink.href='#';
+    //nodeLink.style='margin-left:3px;'
+    nodeLink.innerText='rm'
+    nodeLink.addr=node.addr
+    nodeLink.onclick=function(e){
+      let el=e.target;
+      let addr=el.addr
+      if(!addr){console.log('error, no node addr');return;}
+      let node=nm[addr];
+      if(!node){console.log('error, no such node',addr);return;}
+      rmNode(addr)
+    }
+    cell.appendChild(nodeLink);
+    row.appendChild(cell);
+
+    
+    node.tbl1row=row;
+    tplace.appendChild(row);
+}
+
+
+</script>
+</body>
+
+</html>
