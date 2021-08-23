@@ -526,9 +526,9 @@ const rpc=(q,a)=>{
 return new Promise((resolve, reject) => {
   setTimeout(() => {
     let n=nm[a]
-    if(!n)reject("rpc error: wrong address",q,a);
+    if(!n)return reject("rpc error: wrong address",q,a);
     let r=n.rpc(q)
-    if(!r)reject("rpc failed: ",q,a);
+    if(!r)return reject("rpc failed: ",q,a);
     resolve(r);
   }, 1);
 });
