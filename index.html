@@ -8,6 +8,12 @@
   .hidden{display:none;}
   .center{ flex-direction:column; align-items: center;justify-content: center;}
   .full-screen{width:100%; height:100vh;}
+  .flex2 {margin-top:5px; 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    grid-auto-rows: 50vh; 
+    grid-auto-columns: 50vw; 
+    grid-column-gap: 5px;  grid-row-gap: 5px;}
   </style>
 
   <script src="force-graph.min.js"></script>
@@ -49,24 +55,34 @@
   <div style="margin:1rem; width:100%; height:5%;">
    <span>attacks:</span>
    <span>split </span><a id="split_atk" href="#">run,</a>
-   <span>power(>1/2) </span><a id="power_atk" href="#">run</a>
+   <span>power </span><a id="power_atk" href="#">run</a>
   </div>
+
+  <div style="margin:1rem; width:100%; height:5%;">
+  <span>settings:</span>
+  <a id="auto_fit_set" href="#">az</a>
+
+  <a id="g1_set" href="#">g1</a>
+  <a id="g2_set" href="#">g2</a>
+  <a id="g3_set" href="#">g3</a>
+  <a id="g4_set" href="#">g4</a>
   
- </div>
+  </div>
+</div>
+ 
+ 
  
 </div>
 <!--ROW-->
+</div> <!--root-->
 
-
-
-
-
-</div> <!--COL-->
-
+<div id="root2" class="flex2"></div>
+</div> <!--root2-->
 
 <script type="module">
 
 const rootEl=document.getElementById("root");
+const root2El=document.getElementById("root2");
 const splashEl=document.getElementById("splash");
 
 
@@ -150,6 +166,44 @@ var rndstr=(n)=>{
       rmRndLink();
     }
 
+    const auto_fit_set_El=document.getElementById('auto_fit_set')
+    auto_fit_set_El.onclick=function(e){
+      //console.log('auto_fit_set',e)
+      autoZoomF = !(autoZoomF);
+      console.log('auto_fit_set_El',autoZoomF)      
+    }
+
+    document.getElementById('g1_set').onclick=function(e){
+      console.log('g1_set_El')      
+      root2El.style['grid-template-columns']='1fr'
+      root2El.style['grid-auto-rows']='100vh'; 
+      root2El.style['grid-auto-columns']='100vw'; 
+      resizeWindow();
+    }
+    document.getElementById('g2_set').onclick=function(e){
+      console.log('g2_set_El')      
+      root2El.style['grid-template-columns']='1fr 1fr'
+      root2El.style['grid-auto-rows']='50vh'; 
+      root2El.style['grid-auto-columns']='50vw'; 
+      resizeWindow();
+    }
+    document.getElementById('g3_set').onclick=function(e){
+      console.log('g3_set_El')      
+      root2El.style['grid-template-columns']='1fr 1fr 1fr'
+      root2El.style['grid-auto-rows']='33vh'; 
+      root2El.style['grid-auto-columns']='33vw'; 
+      resizeWindow();
+    }
+    document.getElementById('g4_set').onclick=function(e){
+      console.log('g4_set_El')      
+      root2El.style['grid-template-columns']='1fr 1fr 1fr 1fr'
+      //root2El.style['grid-template-columns']='25vw 25vw 25vw 25vw'
+      root2El.style['grid-auto-rows']='25vh'; 
+      root2El.style['grid-auto-columns']='25vw'; 
+      resizeWindow();
+    }
+
+
 
   const elem1 = document.getElementById('graph1');
 
@@ -179,7 +233,7 @@ const addNodeToG1 = (fcnode)=>{
       const { nodes, links } = Graph1.graphData();
       const no=fcnode.no
       const addr=fcnode.addr
-      let node={id:"n"+no,group:1,color:colors[no%colors.length],no:no,addr:addr,fcnode:fcnode,t:1}
+      let node={id:"n"+no,group:1,color:colors[no%colors.length],no,addr,fcnode,t:1}
       //g1links[addr]={}
       const nls={}
       for(let i=0;i<nodes.length;i++){
@@ -347,9 +401,7 @@ window.checkLinks=()=>{
 
 
 var G2s={}
-//var G3s={}
-
-
+var G2ps={}
 
 const addNodeToG2=(fcnode)=>{
   const addr = fcnode.addr;
@@ -357,33 +409,37 @@ const addNodeToG2=(fcnode)=>{
   if(!addr){console.log('addNodeToG2 !addr',fcnode)}
   
   const rowEl = document.createElement('div');
-  rowEl.style="display: flex;flex-direction:row; margin-top:1px;"
+  //rowEl.style="margin:1rem;"
+  //rowEl.style="width:calc(50vw-10px); height:calc(50vh-10px);"
   
   const g2placeEl = document.createElement('div');
-  g2placeEl.style="width:50vw; height:50vh;"
+  g2placeEl.style="width:100%; height:100%; background:green;"
   const g2infoEl = document.createElement('div');
   const color=colors[fcnode.no%colors.length];
   g2infoEl.style="position:absolute; z-index:100; margin:1rem; color:"+color+";";
   g2infoEl.innerText=no+' '+addr.substr(0,8);
   g2placeEl.appendChild(g2infoEl)
   const g2El = document.createElement('div');
+  g2El.style="position:absolute;"
   g2placeEl.appendChild(g2El)
   
 
-  const g3placeEl = document.createElement('div');
-  g3placeEl.style="width:50vw; height:50vh;";
-  //const g3infoEl = document.createElement('div');
-  //g3infoEl.style="margin-left:1rem;width:calc(100% - 1rem); height:100%; background: aliceblue;overflow:auto";
-  //g3placeEl.appendChild(g3infoEl)
-  //fcnode.g3infoEl = g3infoEl
-  const g3El = document.createElement('div');
-  g3El.style="margin-left:1px;width:calc(100% - 1px); height:100%; background: aliceblue;overflow:auto";
-  g3placeEl.appendChild(g3El)
+  //const g3placeEl = document.createElement('div');
+  //g3placeEl.style="width:50vw; height:50vh;";
+
+  //const g3El = document.createElement('div');
+  //g3El.style="margin-left:1px;width:calc(100% - 1px); height:100%; background: aliceblue;overflow:auto";
+  //g3placeEl.appendChild(g3El)
   
   rowEl.appendChild(g2placeEl)
-  rowEl.appendChild(g3placeEl)
+  //rowEl.appendChild(g2El)
+  //rowEl.appendChild(g3placeEl)
   
-  rootEl.appendChild(rowEl)
+  root2El.appendChild(rowEl)
+  //root2El.appendChild(g2placeEl)
+  const offsetWidth = g2placeEl.offsetWidth
+  const offsetHeight= g2placeEl.offsetHeight
+
   
   fcnode.g2row = rowEl
   
@@ -392,24 +448,23 @@ const addNodeToG2=(fcnode)=>{
     let Graph2 = ForceGraph()(g2El)
       .graphData(data2)
       .backgroundColor('lightblue')
+      .height(offsetHeight)
+      .width(offsetWidth)
       .nodeLabel('id')
       .linkDirectionalArrowLength(5)
       .onNodeClick(node => {  console.log('g2 onNodeClick',node)});
+
+  //console.log('g2placeEl.offsetWidth;',offsetWidth)
+  //console.log('g2placeEl.offsetHeight;',offsetHeight)    
+
+  //Graph2.height(offsetHeight);
+  //Graph2.width(offsetWidth);
       
   G2s[addr]=Graph2;
+  G2ps[addr]=g2placeEl;
 
-  /*
   
-    var data3 = {nodes:[],links:[]}
-    let Graph3 = ForceGraph()(g3El)
-      .graphData(data3)
-      .backgroundColor('lightblue')
-      .nodeLabel('id')
-      .linkDirectionalArrowLength(5)
-      .onNodeClick(node => {  console.log('g3 onNodeClick',node)});
-      
-  G3s[addr]=Graph3;
-  */
+
 }
 
 
@@ -417,7 +472,7 @@ function rmNodeFromG2(node){ if(!node.g2row) return;  rootEl.removeChild(node.g2
 
 
 const g2zoomF=()=>{
-  if(!stoped){
+  if(!stoped && autoZoomF){
    for(let a of Object.keys(G2s)){
     let g2=G2s[a];
     g2.zoomToFit();
@@ -441,9 +496,9 @@ function resizeWindow(){
   
   for(let a of Object.keys(G2s)){
     let g2=G2s[a]
-    g2.height(h-1)
-    g2.width(w)
-    
+    let g2p=G2ps[a]
+    g2.height(g2p.offsetHeight)
+    g2.width(g2p.offsetWidth)    
   }
   
 }
@@ -615,6 +670,7 @@ const onbk=(bk,fcnode)=>{
 
 
 var stoped = true;
+var autoZoomF = false;
 
 
 window.stopAll=()=>{
@@ -699,9 +755,8 @@ var nodecnt=0;
 
 const newNode=()=>{
   let no=nodecnt++
-  //let name='node'+no;
   let addr=rndstr(32);
-  let opt={no:no,/*name:name,*/addr:addr,send:send,rpc:rpc,hash256:hash256,rndstr:rndstr,onbk:onbk,onlbk:onlbk}
+  let opt={no,addr,send,rpc,hash256,rndstr,onbk,onlbk}
   let fcnode=new ForceCons(opt,cfg,bk0)
   nm[addr]=fcnode
   addNodeToG1(fcnode)
@@ -748,22 +803,6 @@ for(var i=0;i<N;i++){
 
 
 // -------------------------------------------------------
-/*
-var unodecnt=0
-const newUNode=()=>{
-  let no=nodecnt++
-  let name='u'+no;
-  let addr=rndstr(32);
-  let unode={no:no,name:name,addr:addr};
-  if(!tryAddUNodeToG1(unode)){return null;}
-  unm[addr]=unode;
-  return unode
-}
-*/
-
-//for(var i=0;i<UN;i++){
-//  newUNode()
-//}
 
 
 var tbl1El;
@@ -781,12 +820,6 @@ function addNodeToTbl1(node){
   var tplace = document.getElementById("tbl1");
   var row = document.createElement("tr");
 
-  //const createCell = (text)=>{
-  //  var cell = document.createElement("td");
-  //  var cellText = document.createTextNode(text);
-  //  cell.appendChild(cellText);
-  //}
-  //
 
     var cell = document.createElement("td");
     var divEl = document.createElement('div');
