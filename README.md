@@ -1,5 +1,5 @@
 # forcecons-sim
-distributed consensus simulation https://web3scout.github.io/forcecons-sim/
+distributed consensus simulation https://aagentlabs.github.io/forcecons-sim/
 
 ### how simulation works
 nodes:
