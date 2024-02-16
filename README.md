@@ -1,5 +1,5 @@
 # forcecons-sim
-distributed consensus simulation https://aagentlabs.github.io/forcecons-sim/
+distributed consensus simulation https://sbagency.github.io/forcecons-sim/
 
 ### how simulation works
 nodes:
@@ -18,7 +18,7 @@ split: split nodes to 2 groups
 power(>1/2): let one node superior power to create alternative chain (rewrite history)
 
 ### publications
-[distributed-consensus-networks-simulation-framework-forcecons-sim](https://medium.com/@web3scout/distributed-consensus-networks-simulation-framework-forcecons-sim-ff2e27e319a0)
+[distributed-consensus-networks-simulation-framework-forcecons-sim](https://medium.com/@sbagency/distributed-consensus-networks-simulation-framework-forcecons-sim-ff2e27e319a0)
 
 
 ### screenshot
